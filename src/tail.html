@@ -1,6 +1,10 @@
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const known=v=>v&&v!=="Not stated";
+const CAT_EMOJI={"Outdoor & nature":"🌲","Multi-sport":"🏅","Ocean & marine":"🐠","Arts & creative":"🎨","Team sports":"🏐","Science & STEM":"🔬","Animals & nature":"🐾","Racket sports":"🎾","Multi-activity":"🎪","Football":"⚽","Surf & water":"🏄","Performing arts":"🎭","Cooking":"🍳","History & museums":"🏛️","Horse riding":"🐴"};
+const catEmoji=c=>CAT_EMOJI[c]||"⭐";
+const LANG_CODE={Portuguese:"PT",English:"EN",Spanish:"ES",French:"FR",German:"DE",Italian:"IT"};
+const langShort=l=>known(l)?l.split(/,| and /).map(s=>s.trim()).filter(Boolean).map(s=>LANG_CODE[s]||s).join(" · "):"Unknown";
 const ageText=r=>r.amin==null&&r.amax==null?"Not listed":r.amax==null?`${r.amin}+`:`${r.amin}–${r.amax}`;
 const bookText=b=>({"Week":"Book by the week","Day":"Book single days","Week or day":"Book by the week or by the day","2-week sessions":"Two-week sessions"})[b]||"";
 const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -41,17 +45,16 @@ function runsInSeason(r,s){
   return false;
 }
 function statusChip(r){
-  let h=`<span class="chip ok">Dates confirmed</span>`;
-  if(r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)) h+=` <span class="chip exp">Price from an earlier season</span>`;
-  return `<div class="chips">${h}</div>`;
+  return r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)?`<span class="chip exp">Last season's price</span>`:"";
 }
 function fill(id,key){[...new Set(LIVE.map(c=>c[key]))].sort().forEach(v=>{const o=document.createElement("option");o.textContent=v;$(id).appendChild(o)})}
-fill("area","area");fill("cat","cat");
+fill("area","area");
+[...new Set(LIVE.map(c=>c.cat))].sort().forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=catEmoji(v)+"  "+v;$("cat").appendChild(o)});
 
 function baseFilter(r){
   if(!r)return false;
   const q=$("q").value.trim().toLowerCase(),age=parseInt($("age").value),area=$("area").value,cat=$("cat").value,book=$("book").value,max=parseFloat($("max").value);
-  if(q&&!JSON.stringify(r).toLowerCase().includes(q))return false;
+  if(q&&!(JSON.stringify(r)+catEmoji(r.cat)).toLowerCase().includes(q))return false;
   if(!isNaN(age)){if(r.amin!=null&&age<r.amin)return false;if(r.amax!=null&&age>r.amax)return false}
   if(area&&r.area!==area)return false;
   if(cat&&r.cat!==cat)return false;
@@ -89,25 +92,23 @@ function estimate(r){
   if(!r._m)return "";
   const n=r._m.length,book=$("book").value;
   const weeks=new Set(r._m.map(d=>{const x=parse(d);x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return iso(x)})).size;
-  if(book!=="week"&&r.dayrate!=null&&/day/i.test(r.book)) return `<div class="est">About €${r.dayrate*n} <span>for your ${n} day${n>1?"s":""} (estimate)</span></div>`;
-  if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") return `<div class="est">About €${r.price*weeks} <span>for ${weeks} week${weeks>1?"s":""} (estimate)</span></div>`;
+  if(book!=="week"&&r.dayrate!=null&&/day/i.test(r.book)) return `<div class="est">≈ €${r.dayrate*n} <span>for ${n} day${n>1?"s":""}</span></div>`;
+  if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") return `<div class="est">≈ €${r.price*weeks} <span>for ${weeks} week${weeks>1?"s":""}</span></div>`;
   return "";
 }
 function priceCell(r,mode){
   let h=mode==="soon"&&r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)?`<p class="lastlbl">Last published price</p>`:"";
-  if(r.price!=null) h+=`<div class="main">€${r.price}</div><div class="unit">${r.book==="2-week sessions"?"per session":"per week"}</div>`;
-  if(r.dayrate!=null) h+=`<div class="${r.price!=null?"day":"main"}">€${r.dayrate}${r.price!=null?' <span class="unit">per day</span>':""}</div>${r.price==null?'<div class="unit">per day</div>':""}`;
+  if(r.price!=null) h+=`<div class="main">€${r.price}<span class="unit"> /${r.book==="2-week sessions"?"session":"week"}</span></div>`;
+  if(r.dayrate!=null) h+=`<div class="${r.price!=null?"day":"main"}">€${r.dayrate}<span class="unit"> /day</span></div>`;
   if(r.price==null&&r.dayrate==null) h+=`<div class="none">Price not published</div>`;
   h+=estimate(r);
-  if(r.pnote) h+=`<p class="pnote">${esc(winter(r.pnote))}</p>`;
   return h;
 }
 function signupCell(r){
   let h="";
   if(r.signupUrl) h+=`<a class="btn" href="${esc(r.signupUrl)}" target="_blank" rel="noopener">Sign up</a>`;
-  if(r.signupContact) h+=`<div class="contact"><b>${esc(known(r.signupVia)&&!r.signupUrl?r.signupVia:"Contact")}</b>${esc(r.signupContact)}</div>`;
-  if(!r.signupUrl) h+=`<a class="btn ${r.signupContact?"ghost":""}" href="${esc(r.link)}" target="_blank" rel="noopener">Camp info</a>`;
-  if(r.signup) h+=`<p class="snote">${esc(r.signup)}</p>`;
+  if(!r.signupUrl) h+=`<a class="btn ghost" href="${esc(r.link)}" target="_blank" rel="noopener">Camp info</a>`;
+  if(!r.signupUrl&&r.signupContact) h+=`<p class="snote">Booking contact in details</p>`;
   return h;
 }
 function soonSignup(r){
@@ -115,17 +116,16 @@ function soonSignup(r){
   let h=`<button type="button" class="btn ${on?"quiet":""} watch" data-n="${esc(key)}" aria-pressed="${on}">${on?"Watching ✓":"Notify me"}</button>`;
   if(r.yr==="2027"&&r.signupUrl) h+=`<a class="btn ghost" href="${esc(r.signupUrl)}" target="_blank" rel="noopener">Sign up</a>`;
   else h+=`<a class="btn ghost" href="${esc(r.link)}" target="_blank" rel="noopener">Camp info</a>`;
-  if(r.signupContact) h+=`<div class="contact"><b>Contact</b>${esc(r.signupContact)}</div>`;
+
   return h;
 }
 const mapUrl=r=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(r.loc+", "+r.area+", Portugal");
 const winter=s=>String(s??"").replace(/Christmas (20\d\d)/g,"Winter break $1").replace(/\bChristmas\b/g,"winter break");
 function aboutCell(r){
-  const chips=[`<span class="chip">${esc(r.cat)}</span>`];
-  chips.push(known(r.lang)?`<span class="chip neutral">Language: ${esc(r.lang)}</span>`:`<span class="chip neutral unk">Language unknown</span>`);
-  if(r.fmt==="Residential") chips.push(`<span class="chip neutral">Overnight</span>`);
   const d=r.desc?`<p class="desc">${esc(r.desc)}</p>`:"";
-  return `<div class="chips">${chips.join("")}</div>${d}<p class="where"><b>Where:</b> ${esc(r.loc)}${r.loc.includes(r.area)?"":`, ${esc(r.area)}`} · <a href="${mapUrl(r)}" target="_blank" rel="noopener">Map</a></p>`;
+  const meta=[`<a class="place" href="${mapUrl(r)}" target="_blank" rel="noopener">📍 ${esc(r.area)}</a>`,`<span class="lang${known(r.lang)?"":" unk"}" title="Language: ${esc(known(r.lang)?r.lang:"unknown")}">🗣 ${esc(langShort(r.lang))}</span>`];
+  if(r.fmt==="Residential") meta.push(`<span>🌙 Overnight</span>`);
+  return `${d}<p class="meta">${meta.join("")}</p>`;
 }
 function detailsPanel(r){
   const facts=[];
@@ -136,25 +136,28 @@ function detailsPanel(r){
   if(known(r.lunch)) facts.push(["Lunch",esc(r.lunch==="Extra"?"Extra cost":r.lunch==="Bring"?"Bring your own":r.lunch)]);
   if(known(r.transport)&&r.transport!=="No") facts.push(["Transport",esc(r.transport)]);
   if(r.bring) facts.push(["What to bring",esc(r.bring)]);
-  if(r.pnote) facts.push(["Price notes",esc(winter(r.pnote))]);
-  if(r.signup) facts.push(["Booking",esc(r.signup)]);
+  facts.push(["Interest",`${catEmoji(r.cat)} ${esc(r.cat)}`]);
+  if(r.pnote) facts.push(["Price details",esc(winter(r.pnote))]);
+  if(bookText(r.book)) facts.push(["Booking style",bookText(r.book)]);
+  if(r.signup) facts.push(["How to book",esc(r.signup)]);
+  if(r.signupContact) facts.push([known(r.signupVia)?esc(r.signupVia):"Contact",esc(r.signupContact)]);
   facts.push(["Source",`<a href="${esc(r.link)}" target="_blank" rel="noopener">Camp's information page</a>`]);
   return `<dl class="facts big">${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
 }
 function whenCell(r,mode){
   let top="";
   if(mode==="yes"&&r._m){const m=r._m;const list=m.length<=6?m.map(fmtDay).join(", "):`${fmtDay(m[0])} to ${fmtDay(m[m.length-1])}`;
-    top=`<div class="match">Runs ${m.length} of your days: ${list}</div>`}
+    top=`<div class="match" title="${esc(list)}">✓ ${m.length} of your days</div>`}
   if(mode==="soon"){const conf=r.yr==="2027";
     top=`<div class="maybe">${conf?"Confirmed for this break, exact days to come":`Ran before${r.yr!=="Unconfirmed"?` (${esc(r.yr)})`:""}, dates not published yet`}</div>`;
-    return `${top}<p><span class="lastlbl">${conf?"Published so far":"Last time"}:</span> ${esc(winter(r.dates))}</p>${bookText(r.book)?`<p class="book">${bookText(r.book)}</p>`:""}`}
-  return `${top}<p>${esc(winter(r.dates))}</p>${bookText(r.book)?`<p class="book">${bookText(r.book)}</p>`:""}`;
+    return `${top}<p><span class="lastlbl">${conf?"So far":"Last time"}:</span> ${esc(winter(r.dates))}</p>`}
+  return `${top}<p>${esc(winter(r.dates))}</p>`;
 }
 const COLS=`<div class="cols" aria-hidden="true"><div>Camp</div><div>About</div><div>Ages</div><div>When</div><div>Price per child</div><div>Sign up</div></div>`;
 function cards(rows,mode){return `<div class="list">${rows.map(r=>`<article class="camp">
-    <div class="c-camp"><h2 class="name"><a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(winter(r.n).replace(/, winter break$/,""))}</a></h2><p class="op">${esc(r.op)}</p>${r.season==="Christmas"?`<div class="chips"><span class="chip Christmas">Winter break</span></div>`:""}<button type="button" class="more" aria-expanded="false">More details</button>${mode==="soon"?`<div class="chips"><span class="chip soon">Coming soon</span></div>`:statusChip(r)}</div>
+    <div class="c-camp"><span class="emo" role="img" aria-label="${esc(r.cat)}" title="${esc(r.cat)}">${catEmoji(r.cat)}</span><div class="hd"><h2 class="name"><a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(winter(r.n).replace(/, winter break$/,""))}</a></h2><p class="op">${esc(r.op)}</p><div class="chips">${mode==="soon"?`<span class="chip soon">Coming soon</span>`:statusChip(r)}</div><button type="button" class="more" aria-expanded="false">More details</button></div></div>
     <div class="c-about about"><span class="lbl">About</span>${aboutCell(r)}</div>
-    <div class="c-ages"><span class="lbl">Ages</span><div class="ages">${esc(ageText(r))}<small>years</small></div></div>
+    <div class="c-ages"><span class="lbl">Ages</span><div class="ages">${esc(ageText(r))}${ageText(r)==="Not listed"?"":" <small>yrs</small>"}</div></div>
     <div class="c-when when"><span class="lbl">When</span>${whenCell(r,mode)}</div>
     <div class="c-price price"><span class="lbl">Price per child</span>${priceCell(r,mode)}</div>
     <div class="c-sign signup"><span class="lbl">Sign up</span>${mode==="soon"?soonSignup(r):signupCell(r)}</div>

@@ -120,6 +120,34 @@ details.bring p{margin:6px 0 0}
 .foot p{margin:0}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;z-index:9}
 
+
+/* Crisp cards: emoji interest badge, one-line meta, prices inline */
+.camp{padding:18px 20px;gap:20px;border-radius:12px}
+.c-camp{display:flex;gap:12px;align-items:flex-start}
+.emo{flex:none;width:44px;height:44px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;font-size:24px;line-height:1}
+.hd{min-width:0}
+.hd .chips{margin:0 0 4px}
+.hd .chips:empty{display:none}
+.name{font-size:18px}
+.op{font-size:14px;margin:0 0 6px}
+.more{font-size:14px;margin:0}
+.desc{margin:0 0 8px;font-size:15px;line-height:1.5}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;font-size:14px;color:var(--ink-2)}
+.meta .place{color:var(--ink-2);text-decoration:none;font-weight:600}
+.meta .place:hover{color:var(--accent);text-decoration:underline}
+.meta .lang{font-weight:600}
+.meta .lang.unk{font-weight:500;font-style:italic}
+.ages{font-size:18px}
+.ages small{display:inline;font-size:14px}
+.price .main{font-size:24px}
+.price .main .unit,.price .day .unit{font:500 14px var(--body);color:var(--ink-2)}
+.price .day{font-size:16px;margin-top:2px}
+.est{font-size:15px;margin-top:6px}
+.est span{font-size:13px}
+.match{font-size:14px;margin-bottom:6px}
+.when p{font-size:15px}
+.snote{font-size:13px}
+.signup .btn{min-height:44px}
 @media (max-width:960px){
   .cols{display:none}
   .camp{grid-template-columns:1fr 1fr;gap:16px 20px}
@@ -158,14 +186,9 @@ details.bring p{margin:6px 0 0}
   .est{font-size:14px}
   .name{font-size:18px}
   .op{margin-bottom:6px}
-  .c-camp{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
-  .c-camp .name,.c-camp .op{flex:1 1 100%}
-  .c-camp .chips{margin:0}
-  .c-camp .more{order:9;flex:1 1 100%;text-align:left;margin:2px 0 0}
+  .emo{width:40px;height:40px;font-size:22px}
   .c-about .lbl,.c-when .lbl,.c-sign .lbl{display:none}
   .desc{-webkit-line-clamp:2;font-size:15px}
-  .where,.when .book,.price .pnote,.snote,.c-about .chip.neutral{display:none}
-  .price .main{font-size:22px}
   .ages{font-size:18px}
   .when p{font-size:15px}
   .match,.maybe{font-size:13px;margin-bottom:4px}
