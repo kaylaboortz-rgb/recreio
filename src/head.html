@@ -1,0 +1,220 @@
+<title>Recreio Camp Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: brand header, sticky filter bar, then one roomy row per camp in six columns (camp, about, ages, when, price, sign up); rows become cards under 960px. */
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --ink:#12233d; --ink-2:#3a4860; --line:#dde3ed; --line-2:#c9d2e0;
+  --accent:#1f5fbf; --accent-ink:#ffffff; --accent-soft:#e7eefb;
+  --sun:#ffc93c; --xmas:#a3263f; --xmas-soft:#fbe6ea; --easter:#25744a; --easter-soft:#e2f2e8;
+  --summer:#7a5200; --summer-soft:#fff0c9; --warn:#8a4b00; --warn-soft:#fdeedb;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1626; --surface:#162136; --ink:#eef2f9; --ink-2:#b7c2d6; --line:#26354f; --line-2:#344866;
+  --accent:#8db2ff; --accent-ink:#0e1626; --accent-soft:#1d2e52;
+  --sun:#f5c84a; --xmas:#ff9fb1; --xmas-soft:#3d1b25; --easter:#8fd9ad; --easter-soft:#17352a;
+  --summer:#ffd27a; --summer-soft:#3a2f12; --warn:#ffc078; --warn-soft:#3a2a12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1626; --surface:#162136; --ink:#eef2f9; --ink-2:#b7c2d6; --line:#26354f; --line-2:#344866;
+  --accent:#8db2ff; --accent-ink:#0e1626; --accent-soft:#1d2e52;
+  --sun:#f5c84a; --xmas:#ff9fb1; --xmas-soft:#3d1b25; --easter:#8fd9ad; --easter-soft:#17352a;
+  --summer:#ffd27a; --summer-soft:#3a2f12; --warn:#ffc078; --warn-soft:#3a2a12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--body);margin:0;padding-inline:16px;padding-block:0 56px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1360px;margin:0 auto}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding-block:32px 20px}
+.brand{display:grid;gap:4px}
+.logo{font:800 clamp(34px,5vw,48px)/1 var(--display);letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:10px}
+.logo .dot{width:.5em;height:.5em;border-radius:50%;background:var(--sun);display:inline-block;transform:translateY(-.05em)}
+.tag{margin:0;font-size:18px;color:var(--ink-2);max-width:60ch}
+.stats{display:flex;flex-wrap:wrap;gap:24px}
+.stat{display:grid}
+.stat b{font:800 28px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:14px;color:var(--ink-2)}
+
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px;border-bottom:1px solid var(--line)}
+.frow{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.f{display:grid;gap:5px;min-width:0}
+.f label{font-size:13px;font-weight:600;color:var(--ink-2)}
+.f input,.f select{font:500 16px var(--body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line-2);border-radius:10px;padding:9px 12px;min-height:44px;min-width:0}
+.f input[type=number]{width:110px}
+#q{width:260px;max-width:100%}
+.seg{display:flex;background:var(--surface);border:1.5px solid var(--line-2);border-radius:10px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{font:600 15px var(--body);border:0;background:transparent;color:var(--ink-2);padding:8px 12px;border-radius:7px;cursor:pointer;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.fend{margin-left:auto;display:flex;gap:8px;align-items:end}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:700 15px var(--body);text-decoration:none;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:10px 16px;min-height:44px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.quiet{border-color:var(--line-2);background:var(--surface);color:var(--ink)}
+.quick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;font-size:14px;color:var(--ink-2)}
+.quick button{font:600 14px var(--body);border:1.5px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;min-height:34px}
+.quick button:hover{border-color:var(--accent)}
+.f input[type=date]{width:170px}
+.group-h{font:800 22px/1.2 var(--display);margin:20px 0 4px}
+.group-p{margin:0 0 12px;color:var(--ink-2);max-width:75ch}
+.match{display:inline-block;font:700 14px var(--body);border-radius:8px;padding:6px 10px;background:var(--easter-soft);color:var(--easter);margin-bottom:8px}
+.maybe{display:inline-block;font:600 14px var(--body);border-radius:8px;padding:6px 10px;background:var(--warn-soft);color:var(--warn);margin-bottom:8px}
+.chip.soon{background:var(--line);color:var(--ink)}
+.lastlbl{font-weight:700;color:var(--ink-2);font-size:14px;margin:0 0 2px}
+.soon-h{margin-top:40px}
+.ready{background:var(--easter-soft);color:var(--easter);border-radius:12px;padding:12px 16px;margin:8px 0 4px;font-size:16px}
+.desc{margin:6px 0 8px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.where{margin:0;font-size:15px}
+.chip.unk{border-style:dashed}
+.more{font:600 15px var(--body);color:var(--accent);background:none;border:0;padding:0;margin:0 0 10px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.panel{grid-column:1/-1;border-top:1px solid var(--line);padding-top:16px}
+.facts.big{font-size:16px;gap:8px 20px;max-width:90ch;margin:0}
+.facts.big dd{line-height:1.55}
+font:700 16px var(--body);margin-top:8px}
+.est span{font-weight:500;color:var(--ink-2);font-size:14px}
+.result-line{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-block:16px 10px;font-size:15px;color:var(--ink-2)}
+.result-line b{color:var(--ink)}
+
+.list{display:grid;gap:12px}
+.cols,.camp{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1.7fr) 88px minmax(0,1.15fr) minmax(0,1fr) 168px;gap:24px}
+.cols{padding:0 20px 2px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.camp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.list+.group-h{margin-top:32px}
+.camp>div{min-width:0}
+.lbl{display:none}
+.name{font:700 19px/1.3 var(--body);margin:0 0 4px;color:var(--ink)}
+.name a{color:inherit;text-decoration:none}
+.name a:hover{text-decoration:underline}
+.op{font-size:15px;color:var(--ink-2);margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{display:inline-block;font:600 13px/1.2 var(--body);border-radius:999px;padding:4px 10px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.chip.Christmas{background:var(--xmas-soft);color:var(--xmas)}
+.chip.Easter{background:var(--easter-soft);color:var(--easter)}
+.chip.Summer{background:var(--summer-soft);color:var(--summer)}
+.chip.ok{background:var(--easter-soft);color:var(--easter)}
+.chip.exp{background:var(--warn-soft);color:var(--warn)}
+.chip.neutral{background:transparent;color:var(--ink-2);border:1px solid var(--line-2)}
+.about p{margin:0 0 6px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0;font-size:15px}
+.facts dt{color:var(--ink-2);font-weight:600}
+.facts dd{margin:0}
+details.bring{margin-top:10px;font-size:15px}
+details.bring summary{cursor:pointer;color:var(--accent);font-weight:600}
+details.bring p{margin:6px 0 0}
+.ages{font:700 20px/1.2 var(--body);font-variant-numeric:tabular-nums}
+.ages small{display:block;font:500 14px var(--body);color:var(--ink-2)}
+.when p{margin:0 0 6px}
+.when .book{font-size:15px;color:var(--ink-2)}
+.price .main{font:800 26px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.price .unit{font:500 15px var(--body);color:var(--ink-2)}
+.price .day{font:700 18px var(--body);margin-top:4px;font-variant-numeric:tabular-nums}
+.price .none{font:600 16px var(--body);color:var(--ink-2)}
+.price .pnote{font-size:15px;color:var(--ink-2);margin:8px 0 0}
+.signup{display:grid;align-content:start;gap:8px}
+.signup .btn{width:100%}
+.contact{font-size:15px;word-break:break-word}
+.contact b{display:block;font-size:13px;color:var(--ink-2);font-weight:600}
+.snote{font-size:14px;color:var(--ink-2);margin:0}
+.empty{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:32px;text-align:center;color:var(--ink-2)}
+.foot{margin-top:32px;font-size:15px;color:var(--ink-2);max-width:80ch;display:grid;gap:8px}
+.foot p{margin:0}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;z-index:9}
+
+@media (max-width:960px){
+  .cols{display:none}
+  .camp{grid-template-columns:1fr 1fr;gap:16px 20px}
+  .camp .c-camp,.camp .c-about{grid-column:1/-1}
+  .camp .c-sign{grid-column:1/-1}
+  .lbl{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:4px}
+  .signup .btn{width:auto}
+  .fend{margin-left:0}
+}
+@media (max-width:520px){
+  .camp{grid-template-columns:1fr}
+  .f input[type=number]{width:100%}
+  #q{width:100%}
+  .frow>.f{flex:1 1 140px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#moreF{display:none}
+@media (max-width:520px){
+  header.top{padding-block:20px 12px;gap:10px}
+  .tag{font-size:16px}
+  .stats{gap:18px}
+  .stat b{font-size:22px}
+  .stat span{font-size:13px}
+  .filters:not(.open) .extra{display:none}
+  .frow{gap:10px}
+  .f input[type=date]{width:100%}
+  .fend{flex:1 1 100%;margin-left:0}
+  .fend .btn{flex:1}
+  #moreF{display:inline-flex;justify-content:center}
+  #copy{display:none}
+  .camp{grid-template-columns:1fr 1fr;gap:12px 16px;padding:16px}
+  .filters{position:static}
+  .camp .c-when,.camp .c-sign{grid-column:1/-1}
+  .c-camp{order:0}.c-about{order:1}.c-ages{order:2}.c-price{order:3}.c-when{order:4}.c-sign{order:5}.camp .panel{order:6}
+  .c-ages .lbl,.c-price .lbl{margin-bottom:2px}
+  .est{font-size:14px}
+  .name{font-size:18px}
+  .op{margin-bottom:6px}
+  .c-camp{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+  .c-camp .name,.c-camp .op{flex:1 1 100%}
+  .c-camp .chips{margin:0}
+  .c-camp .more{order:9;flex:1 1 100%;text-align:left;margin:2px 0 0}
+  .c-about .lbl,.c-when .lbl,.c-sign .lbl{display:none}
+  .desc{-webkit-line-clamp:2;font-size:15px}
+  .where,.when .book,.price .pnote,.snote,.c-about .chip.neutral{display:none}
+  .price .main{font-size:22px}
+  .ages{font-size:18px}
+  .when p{font-size:15px}
+  .match,.maybe{font-size:13px;margin-bottom:4px}
+  .signup .btn{width:100%}
+  .panel{padding-top:12px}
+  .facts.big{grid-template-columns:1fr;gap:2px;font-size:15px}
+  .facts.big dt{margin-top:8px}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <p class="logo"><span class="dot" aria-hidden="true"></span>Recreio</p>
+      <p class="tag">Pick your dates and find school-holiday camps around Lisbon, Cascais, Sintra, Oeiras and Almada, for kids aged 3 to 14.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <form class="filters" id="filters" onsubmit="return false" aria-label="Filter camps">
+    <div class="frow">
+      <div class="f"><label for="q">Search</label><input id="q" type="search" placeholder="Surf, science, Carcavelos…"></div>
+      <div class="f"><label for="age">Child's age</label><input id="age" type="number" min="2" max="17" inputmode="numeric" placeholder="Any"></div>
+      <div class="f"><label for="from">From</label><input id="from" type="date"></div>
+      <div class="f"><label for="to">To</label><input id="to" type="date"></div>
+      <div class="f extra"><label for="book">Booking</label><select id="book"><option value="">Week or day</option><option value="week">Full weeks</option><option value="day">Single days</option></select></div>
+      <div class="f extra"><label for="area">Area</label><select id="area"><option value="">All areas</option></select></div>
+      <div class="f extra"><label for="cat">Interest</label><select id="cat"><option value="">All interests</option></select></div>
+      <div class="f extra"><label for="max">Max € per week</label><input id="max" type="number" min="0" step="10" inputmode="numeric" placeholder="Any"></div>
+      <div class="f extra"><label for="sort">Sort</label><select id="sort"><option value="soon">Soonest dates</option><option value="price">Lowest price</option><option value="name">Name A to Z</option><option value="age">Youngest ages first</option></select></div>
+      <div class="fend"><button class="btn quiet" type="button" id="moreF" aria-expanded="false">More filters</button><button class="btn quiet" type="button" id="reset">Clear</button></div>
+    </div>
+    <div class="quick" id="quick"><span>Quick fill:</span>
+      <button type="button" data-f="2026-12-21" data-t="2027-01-01">21 Dec – 1 Jan</button>
+      <button type="button" data-f="2026-12-16" data-t="2026-12-31">16 – 31 Dec</button>
+      <button type="button" data-f="2027-03-22" data-t="2027-04-02">22 Mar – 2 Apr</button>
+      <button type="button" data-f="2027-06-28" data-t="2027-07-09">28 Jun – 9 Jul</button>
+    </div>
+  </form>
+
+  <div class="result-line"><span id="count" aria-live="polite"></span><button class="btn ghost" type="button" id="copy" style="min-height:36px;padding:6px 12px;font-size:14px">Copy list as CSV</button></div>
+
+  <div id="results"></div>
+
+  <div class="foot">
+    <p><b>Confirmed and coming soon.</b> A camp is listed as confirmed once it has published its exact dates. Camps that usually run during the upcoming break but haven't confirmed exact days yet appear under Coming soon, with last season's details clearly labelled. Camps for later breaks stay hidden until that break comes up. The list is checked monthly.</p>
+    <p>Prices are per child, as each camp publishes them. Totals for your dates are estimates from the published weekly or daily price. "Not published" means we couldn't find a price online. Camp details are refreshed monthly.</p>
+  </div>
+</div>
+<div id="toast" hidden></div>
+
+<script>

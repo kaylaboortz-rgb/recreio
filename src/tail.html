@@ -1,0 +1,217 @@
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const known=v=>v&&v!=="Not stated";
+const ageText=r=>r.amin==null&&r.amax==null?"Not listed":r.amax==null?`${r.amin}+`:`${r.amin}–${r.amax}`;
+const bookText=b=>({"Week":"Book by the week","Day":"Book single days","Week or day":"Book by the week or by the day","2-week sessions":"Two-week sessions"})[b]||"";
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const iso=d=>d.toISOString().slice(0,10);
+const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(Date.UTC(y,m-1,d))};
+const fmtDay=s=>{const d=parse(s);return `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`};
+function weekdaysBetween(a,b){const out=[];for(let d=parse(a);d<=parse(b);d.setUTCDate(d.getUTCDate()+1)){const w=d.getUTCDay();if(w>0&&w<6)out.push(iso(d))}return out}
+function campDays(r){
+  const set=new Set(r.days||[]);
+  (r.weeks||[]).forEach(m=>{const d=parse(m);for(let i=0;i<5;i++){const x=new Date(d);x.setUTCDate(d.getUTCDate()+i);set.add(iso(x))}});
+  return [...set].sort();
+}
+const TODAY=iso(new Date());
+// A listing goes live only once the camp has confirmed exact dates that are still ahead.
+const LIVE=CAMPS.filter(c=>c.status!=="Inactive"&&campDays(c).some(d=>d>=TODAY));
+const WAITING=CAMPS.filter(c=>c.status!=="Inactive").length-LIVE.length;
+function breakOf(s){const d=parse(s),m=d.getUTCMonth()+1,day=d.getUTCDate();
+  if((m===12&&day>=10)||(m===1&&day<=10))return "Christmas";
+  if(m===2)return "Carnival";
+  if((m===3&&day>=15)||(m===4&&day<=20))return "Easter";
+  if(m>=6&&m<=8||(m===9&&day<=15))return "Summer";
+  if((m===10&&day>=15)||(m===11&&day<=5))return "October";
+  return null}
+function nextBreak(){for(let d=parse(TODAY),i=0;i<400;i++,d.setUTCDate(d.getUTCDate()+1)){const b=breakOf(iso(d));if(b)return b}return null}
+const BREAK_LABEL={Christmas:"winter break",Carnival:"Carnival",Easter:"Easter",Summer:"summer",October:"October half-term"};
+function comingSoon(rows,breaks,exclude){
+  return rows.filter(r=>!exclude.has(r.n)&&(r.breaks||[]).some(b=>breaks.has(b))&&!campDays(r).some(d=>d>=TODAY&&breaks.has(breakOf(d)))).map(r=>({...r,_brk:(r.breaks||[]).find(b=>breaks.has(b))}));
+}
+function seasonsOf(from,to){
+  const s=new Set();weekdaysBetween(from,to).forEach(x=>{const m=parse(x).getUTCMonth()+1,d=parse(x).getUTCDate();
+    if(m===12||(m===1&&d<=10))s.add("Christmas");else if(m===3||m===4)s.add("Easter");else if(m>=6&&m<=9)s.add("Summer")});
+  return s;
+}
+function runsInSeason(r,s){
+  if(s==="Christmas")return r.season==="Christmas"||/christmas|natal/i.test(r.dates);
+  if(s==="Easter")return r.season==="Easter"||/easter|páscoa/i.test(r.dates);
+  if(s==="Summer")return !r.season||/summer|verão|jun|jul|aug|sep/i.test(r.dates);
+  return false;
+}
+function statusChip(r){
+  let h=`<span class="chip ok">Dates confirmed</span>`;
+  if(r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)) h+=` <span class="chip exp">Price from an earlier season</span>`;
+  return `<div class="chips">${h}</div>`;
+}
+function fill(id,key){[...new Set(LIVE.map(c=>c[key]))].sort().forEach(v=>{const o=document.createElement("option");o.textContent=v;$(id).appendChild(o)})}
+fill("area","area");fill("cat","cat");
+
+function baseFilter(r){
+  if(!r)return false;
+  const q=$("q").value.trim().toLowerCase(),age=parseInt($("age").value),area=$("area").value,cat=$("cat").value,book=$("book").value,max=parseFloat($("max").value);
+  if(q&&!JSON.stringify(r).toLowerCase().includes(q))return false;
+  if(!isNaN(age)){if(r.amin!=null&&age<r.amin)return false;if(r.amax!=null&&age>r.amax)return false}
+  if(area&&r.area!==area)return false;
+  if(cat&&r.cat!==cat)return false;
+  if(book==="day"&&!/day/i.test(r.book))return false;
+  if(book==="week"&&!/week/i.test(r.book))return false;
+  if(!isNaN(max)&&(r.price==null||r.price>max))return false;
+  return true;
+}
+function getRange(){
+  let f=$("from").value,t=$("to").value;
+  if(f&&!t)t=f; if(t&&!f)f=t;
+  if(f&&t&&f>t)[f,t]=[t,f];
+  return f?{from:f,to:t,days:weekdaysBetween(f,t)}:null;
+}
+function classify(rows,range,all){
+  if(!range){const nb=nextBreak();const live=rows.filter(r=>LIVE.includes(r));return {all:live,soon:nb?comingSoon(all,new Set([nb]),new Set(live.map(r=>r.n))):[],nb}}
+  const want=new Set(range.days),yes=[];
+  rows.filter(r=>LIVE.includes(r)).forEach(r=>{
+    const cd=campDays(r);
+    const m=cd.filter(d=>want.has(d));if(m.length)yes.push({...r,_m:m});
+  });
+  const touched=new Set(range.days.map(breakOf).filter(Boolean));
+  return {yes,soon:comingSoon(all,touched,new Set(yes.map(r=>r.n))),touched};
+}
+function firstDate(r){const d=r._m?r._m[0]:campDays(r).find(x=>x>=iso(new Date()));return d||"9999"}
+const SEASON_ORDER={Christmas:0,Easter:1};
+function sortRows(rows){
+  const k=$("sort").value;
+  if(k==="price") return rows.sort((a,b)=>(a.price??(a.dayrate!=null?1e6+a.dayrate:1e9))-(b.price??(b.dayrate!=null?1e6+b.dayrate:1e9)));
+  if(k==="name") return rows.sort((a,b)=>a.n.localeCompare(b.n));
+  if(k==="age") return rows.sort((a,b)=>(a.amin??99)-(b.amin??99));
+  return rows.sort((a,b)=>firstDate(a).localeCompare(firstDate(b))||((SEASON_ORDER[a.season]??2)-(SEASON_ORDER[b.season]??2))||((a.yr==="2027"?0:1)-(b.yr==="2027"?0:1))||a.n.localeCompare(b.n));
+}
+function estimate(r){
+  if(!r._m)return "";
+  const n=r._m.length,book=$("book").value;
+  const weeks=new Set(r._m.map(d=>{const x=parse(d);x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return iso(x)})).size;
+  if(book!=="week"&&r.dayrate!=null&&/day/i.test(r.book)) return `<div class="est">About €${r.dayrate*n} <span>for your ${n} day${n>1?"s":""} (estimate)</span></div>`;
+  if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") return `<div class="est">About €${r.price*weeks} <span>for ${weeks} week${weeks>1?"s":""} (estimate)</span></div>`;
+  return "";
+}
+function priceCell(r,mode){
+  let h=mode==="soon"&&r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)?`<p class="lastlbl">Last published price</p>`:"";
+  if(r.price!=null) h+=`<div class="main">€${r.price}</div><div class="unit">${r.book==="2-week sessions"?"per session":"per week"}</div>`;
+  if(r.dayrate!=null) h+=`<div class="${r.price!=null?"day":"main"}">€${r.dayrate}${r.price!=null?' <span class="unit">per day</span>':""}</div>${r.price==null?'<div class="unit">per day</div>':""}`;
+  if(r.price==null&&r.dayrate==null) h+=`<div class="none">Price not published</div>`;
+  h+=estimate(r);
+  if(r.pnote) h+=`<p class="pnote">${esc(winter(r.pnote))}</p>`;
+  return h;
+}
+function signupCell(r){
+  let h="";
+  if(r.signupUrl) h+=`<a class="btn" href="${esc(r.signupUrl)}" target="_blank" rel="noopener">Sign up</a>`;
+  if(r.signupContact) h+=`<div class="contact"><b>${esc(known(r.signupVia)&&!r.signupUrl?r.signupVia:"Contact")}</b>${esc(r.signupContact)}</div>`;
+  if(!r.signupUrl) h+=`<a class="btn ${r.signupContact?"ghost":""}" href="${esc(r.link)}" target="_blank" rel="noopener">Camp info</a>`;
+  if(r.signup) h+=`<p class="snote">${esc(r.signup)}</p>`;
+  return h;
+}
+function soonSignup(r){
+  const key=r.n+"|"+(r._brk||"");const on=WATCH.has(key);
+  let h=`<button type="button" class="btn ${on?"quiet":""} watch" data-n="${esc(key)}" aria-pressed="${on}">${on?"Watching ✓":"Notify me"}</button>`;
+  if(r.yr==="2027"&&r.signupUrl) h+=`<a class="btn ghost" href="${esc(r.signupUrl)}" target="_blank" rel="noopener">Sign up</a>`;
+  else h+=`<a class="btn ghost" href="${esc(r.link)}" target="_blank" rel="noopener">Camp info</a>`;
+  if(r.signupContact) h+=`<div class="contact"><b>Contact</b>${esc(r.signupContact)}</div>`;
+  return h;
+}
+const mapUrl=r=>"https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(r.loc+", "+r.area+", Portugal");
+const winter=s=>String(s??"").replace(/Christmas (20\d\d)/g,"Winter break $1").replace(/\bChristmas\b/g,"winter break");
+function aboutCell(r){
+  const chips=[`<span class="chip">${esc(r.cat)}</span>`];
+  chips.push(known(r.lang)?`<span class="chip neutral">Language: ${esc(r.lang)}</span>`:`<span class="chip neutral unk">Language unknown</span>`);
+  if(r.fmt==="Residential") chips.push(`<span class="chip neutral">Overnight</span>`);
+  const d=r.desc?`<p class="desc">${esc(r.desc)}</p>`:"";
+  return `<div class="chips">${chips.join("")}</div>${d}<p class="where"><b>Where:</b> ${esc(r.loc)}${r.loc.includes(r.area)?"":`, ${esc(r.area)}`} · <a href="${mapUrl(r)}" target="_blank" rel="noopener">Map</a></p>`;
+}
+function detailsPanel(r){
+  const facts=[];
+  if(r.desc) facts.push(["About",esc(r.desc)]);
+  facts.push(["Where",`${esc(r.loc)}${r.loc.includes(r.area)?"":`, ${esc(r.area)}`} · <a href="${mapUrl(r)}" target="_blank" rel="noopener">Open in Google Maps</a>`]);
+  facts.push(["Language",known(r.lang)?esc(r.lang):"Unknown. Ask the camp which language activities run in."]);
+  if(known(r.hours)) facts.push(["Hours",esc(r.hours)]);
+  if(known(r.lunch)) facts.push(["Lunch",esc(r.lunch==="Extra"?"Extra cost":r.lunch==="Bring"?"Bring your own":r.lunch)]);
+  if(known(r.transport)&&r.transport!=="No") facts.push(["Transport",esc(r.transport)]);
+  if(r.bring) facts.push(["What to bring",esc(r.bring)]);
+  if(r.pnote) facts.push(["Price notes",esc(winter(r.pnote))]);
+  if(r.signup) facts.push(["Booking",esc(r.signup)]);
+  facts.push(["Source",`<a href="${esc(r.link)}" target="_blank" rel="noopener">Camp's information page</a>`]);
+  return `<dl class="facts big">${facts.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>`;
+}
+function whenCell(r,mode){
+  let top="";
+  if(mode==="yes"&&r._m){const m=r._m;const list=m.length<=6?m.map(fmtDay).join(", "):`${fmtDay(m[0])} to ${fmtDay(m[m.length-1])}`;
+    top=`<div class="match">Runs ${m.length} of your days: ${list}</div>`}
+  if(mode==="soon"){const conf=r.yr==="2027";
+    top=`<div class="maybe">${conf?"Confirmed for this break, exact days to come":`Ran before${r.yr!=="Unconfirmed"?` (${esc(r.yr)})`:""}, dates not published yet`}</div>`;
+    return `${top}<p><span class="lastlbl">${conf?"Published so far":"Last time"}:</span> ${esc(winter(r.dates))}</p>${bookText(r.book)?`<p class="book">${bookText(r.book)}</p>`:""}`}
+  return `${top}<p>${esc(winter(r.dates))}</p>${bookText(r.book)?`<p class="book">${bookText(r.book)}</p>`:""}`;
+}
+const COLS=`<div class="cols" aria-hidden="true"><div>Camp</div><div>About</div><div>Ages</div><div>When</div><div>Price per child</div><div>Sign up</div></div>`;
+function cards(rows,mode){return `<div class="list">${rows.map(r=>`<article class="camp">
+    <div class="c-camp"><h2 class="name"><a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(winter(r.n).replace(/, winter break$/,""))}</a></h2><p class="op">${esc(r.op)}</p>${r.season==="Christmas"?`<div class="chips"><span class="chip Christmas">Winter break</span></div>`:""}<button type="button" class="more" aria-expanded="false">More details</button>${mode==="soon"?`<div class="chips"><span class="chip soon">Coming soon</span></div>`:statusChip(r)}</div>
+    <div class="c-about about"><span class="lbl">About</span>${aboutCell(r)}</div>
+    <div class="c-ages"><span class="lbl">Ages</span><div class="ages">${esc(ageText(r))}<small>years</small></div></div>
+    <div class="c-when when"><span class="lbl">When</span>${whenCell(r,mode)}</div>
+    <div class="c-price price"><span class="lbl">Price per child</span>${priceCell(r,mode)}</div>
+    <div class="c-sign signup"><span class="lbl">Sign up</span>${mode==="soon"?soonSignup(r):signupCell(r)}</div>
+    <div class="panel" hidden>${detailsPanel(r)}</div>
+  </article>`).join("")}</div>`}
+const EMPTY=msg=>`<div class="empty">${msg}</div>`;
+let lastRows=[];
+let WATCH=new Set();try{WATCH=new Set(JSON.parse(localStorage.getItem("recreio-watch")||"[]"))}catch(e){}
+function saveWatch(){try{localStorage.setItem("recreio-watch",JSON.stringify([...WATCH]))}catch(e){}}
+function soonBlock(list,label){
+  if(!list.length)return "";
+  return `<h2 class="group-h soon-h">Coming soon for ${label}</h2><p class="group-p">These camps run during ${label} but haven't confirmed exact days yet. Tap Notify me and the camp is flagged at the top of this page once its dates are confirmed.</p>`+COLS+cards(sortRows(list),"soon");
+}
+function render(){
+  const all=CAMPS.filter(c=>c.status!=="Inactive").filter(baseFilter),range=getRange(),g=classify(all,range,all);
+  let html="";
+  const ready=[...WATCH].map(k=>k.split("|")).filter(([n,b])=>{const c=CAMPS.find(x=>x.n===n);return c&&campDays(c).some(d=>d>=TODAY&&(!b||breakOf(d)===b))}).map(([n,b])=>b?`${n} (${BREAK_LABEL[b]})`:n);
+  if(ready.length) html+=`<div class="ready"><b>Dates confirmed</b> for camps you're watching: ${ready.map(esc).join(", ")}. Pick those dates above to see them.</div>`;
+  if(!range){
+    lastRows=sortRows(g.all);
+    const nbl=g.nb?BREAK_LABEL[g.nb]:"";
+    html+=`<h2 class="group-h">Confirmed camps</h2><p class="group-p">Every camp with confirmed upcoming dates. Pick dates above to see what runs when you need it.</p>`;
+    html+=lastRows.length?COLS+cards(lastRows,"all"):EMPTY("No camps match these filters. Try another age or a wider price range, or clear the filters.");
+    html+=soonBlock(g.soon,nbl);
+    $("count").innerHTML=`<b>${lastRows.length}</b> confirmed camp${lastRows.length===1?"":"s"}${g.soon.length?` · ${g.soon.length} coming soon for ${nbl}`:""}`;
+  }else{
+    const yes=sortRows(g.yes);lastRows=yes;
+    const label=range.from===range.to?fmtDay(range.from):`${fmtDay(range.from)} to ${fmtDay(range.to)}`;
+    const bl=[...g.touched].map(b=>BREAK_LABEL[b]).join(" and ");
+    html+=`<h2 class="group-h">Running on your dates</h2><p class="group-p">Camps with confirmed dates that overlap ${label}.</p>`;
+    html+=yes.length?COLS+cards(yes,"yes"):EMPTY("No camps with confirmed dates run on these days yet. Camps are added as soon as they confirm their dates.");
+    if(bl) html+=soonBlock(g.soon,bl);
+    $("count").innerHTML=`<b>${yes.length}</b> camp${yes.length===1?"":"s"} running ${label}${g.soon.length?` · ${g.soon.length} coming soon`:""}`;
+  }
+  $("results").innerHTML=html;
+  document.querySelectorAll(".more").forEach(b=>b.onclick=()=>{const p=b.closest(".camp").querySelector(".panel");const open=p.hidden;p.hidden=!open;b.setAttribute("aria-expanded",String(open));b.textContent=open?"Hide details":"More details"});
+  document.querySelectorAll(".watch").forEach(b=>b.onclick=()=>{const n=b.dataset.n;
+    if(WATCH.has(n)){WATCH.delete(n);toast("Stopped watching")}else{WATCH.add(n);toast("Watching. It will be flagged here once dates are confirmed.")}
+    saveWatch();render()});
+  const next=LIVE.map(c=>campDays(c).find(d=>d>=TODAY)).sort()[0];
+  const nb=nextBreak(),soonN=nb?comingSoon(CAMPS.filter(c=>c.status!=="Inactive"),new Set([nb]),new Set(LIVE.map(c=>c.n))).length:0;
+  $("stats").innerHTML=`<div class="stat"><b>${LIVE.length}</b><span>confirmed camps</span></div>${soonN?`<div class="stat"><b>${soonN}</b><span>coming soon for ${BREAK_LABEL[nb]}</span></div>`:""}${next?`<div class="stat"><b>${fmtDay(next)}</b><span>next camp day</span></div>`:""}`;
+  try{localStorage.setItem("recreio-f2",JSON.stringify(IDS.map(i=>$(i).value)))}catch(e){}
+}
+const IDS=["q","age","from","to","area","cat","book","max","sort"];
+try{const today=iso(new Date());$("from").min=today;$("to").min=today}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("recreio-f2")||"null");if(s)IDS.forEach((i,n)=>{if(s[n]!=null)$(i).value=s[n]})}catch(e){}
+IDS.forEach(i=>$(i).addEventListener("input",render));
+$("from").addEventListener("change",()=>{if($("to").value&&$("to").value<$("from").value)$("to").value=$("from").value;render()});
+document.querySelectorAll("#quick button").forEach(b=>b.onclick=()=>{$("from").value=b.dataset.f;$("to").value=b.dataset.t;render()});
+$("reset").onclick=()=>{IDS.forEach(i=>$(i).value=i==="sort"?"soon":"");render()};
+function toast(t){$("toast").textContent=t;$("toast").hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").hidden=true,2200)}
+$("copy").onclick=()=>{
+  const keys=["n","op","area","loc","amin","amax","cat","fmt","season","book","price","dayrate","lang","dates","hours","pnote","lunch","transport","signup","signupUrl","signupVia","signupContact","bring","link","yr"];
+  const csv=[keys.join(",")].concat(lastRows.map(r=>keys.map(k=>`"${String(r[k]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
+  navigator.clipboard.writeText(csv).then(()=>toast("Copied. Paste into a spreadsheet.")).catch(()=>toast("Copy was blocked in this view."));
+};
+render();
+try{const mf=document.getElementById("moreF"),fm=document.getElementById("filters");mf.onclick=()=>{const o=fm.classList.toggle("open");mf.setAttribute("aria-expanded",String(o));mf.textContent=o?"Fewer filters":"More filters"};}catch(e){}
+</script>
