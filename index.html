@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Find school-holiday camps around Lisbon, Cascais, Sintra, Oeiras and Almada by your dates.">
 <title>Recreio Camp Finder</title>
+<script data-goatcounter="https://recreio.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
@@ -526,6 +527,19 @@ $("copy").onclick=()=>{
 };
 render();
 try{const mf=document.getElementById("moreF"),fm=document.getElementById("filters");mf.onclick=()=>{const o=fm.classList.toggle("open");mf.setAttribute("aria-expanded",String(o));mf.textContent=o?"Fewer filters":"More filters"};}catch(e){}
+/* Anonymous usage counts (GoatCounter on the public site; does nothing where the counter script is absent). */
+function track(path,title){try{if(window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:path,title:title||path,event:true})}catch(e){}}
+let lastRange="",rangeTimer=null;
+function trackRange(){clearTimeout(rangeTimer);rangeTimer=setTimeout(()=>{const f=$("from").value,t=$("to").value;if(!f||!t)return;const k=f+"_to_"+t;if(k===lastRange)return;lastRange=k;track("search-dates/"+k,"Searched "+f+" to "+t)},1500)}
+$("from").addEventListener("change",trackRange);$("to").addEventListener("change",trackRange);
+document.addEventListener("click",e=>{const el=e.target.closest("a,button");if(!el)return;const card=el.closest(".camp");const name=card?(card.querySelector(".name")||{}).textContent||"":"";
+  if(el.matches("#quick button")){trackRange();return}
+  if(!card)return;
+  if(el.classList.contains("more")&&el.getAttribute("aria-expanded")==="false")track("details/"+name,"More details: "+name);
+  else if(el.classList.contains("watch")&&el.getAttribute("aria-pressed")==="false")track("notify/"+name,"Notify me: "+name);
+  else if(el.closest(".signup")&&el.tagName==="A")track("signup/"+name,(el.textContent.trim()==="Sign up"?"Sign up: ":"Camp info: ")+name);
+  else if(el.tagName==="A"&&/google\.com\/maps/.test(el.href))track("map/"+name,"Map: "+name);
+},true);
 </script>
 
 </body>
