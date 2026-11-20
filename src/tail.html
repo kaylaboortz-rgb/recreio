@@ -92,13 +92,14 @@ function estimate(r){
   if(!r._m)return "";
   const n=r._m.length,book=$("book").value;
   const weeks=new Set(r._m.map(d=>{const x=parse(d);x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return iso(x)})).size;
+  if(book!=="week"&&r.dayrate!=null&&r.price!=null&&r.book==="Week or day"&&r.price*weeks<r.dayrate*n) return `<div class="est">≈ €${r.price*weeks} <span>for ${n} day${n>1?"s":""}</span></div>`;
   if(book!=="week"&&r.dayrate!=null&&/day/i.test(r.book)) return `<div class="est">≈ €${r.dayrate*n} <span>for ${n} day${n>1?"s":""}</span></div>`;
   if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") return `<div class="est">≈ €${r.price*weeks} <span>for ${weeks} week${weeks>1?"s":""}</span></div>`;
   return "";
 }
 function priceCell(r,mode){
   let h=mode==="soon"&&r.yr!=="2027"&&(r.price!=null||r.dayrate!=null)?`<p class="lastlbl">Last published price</p>`:"";
-  if(r.price!=null) h+=`<div class="main">€${r.price}<span class="unit"> /${r.book==="2-week sessions"?"session":"week"}</span></div>`;
+  if(r.price!=null) h+=`<div class="main">€${r.price}<span class="unit"> /${r.punit||(r.book==="2-week sessions"?"session":"week")}</span></div>`;
   if(r.dayrate!=null) h+=`<div class="${r.price!=null?"day":"main"}">€${r.dayrate}<span class="unit"> /day</span></div>`;
   if(r.price==null&&r.dayrate==null) h+=`<div class="none">Price not published</div>`;
   h+=estimate(r);
