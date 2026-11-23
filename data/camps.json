@@ -2791,5 +2791,44 @@
     ],
     "desc": "Three days of forest school in the woods near Colares, Sintra. Children make Christmas and nature crafts, explore the forest, play group games, hear spooky stories and have plenty of free, child-led play.",
     "punit": "3 days"
+  },
+  {
+    "n": "Natura Kids Winter Camp, winter break",
+    "op": "Natura Kids Camp",
+    "area": "Sintra",
+    "loc": "Quinta Fonte de Linho",
+    "amin": 3,
+    "amax": 9,
+    "cat": "Outdoor & nature",
+    "fmt": "Day",
+    "season": "Christmas",
+    "dates": "Winter break 2026: 14 to 17 Dec (Mon to Thu)",
+    "hours": "10:00 to 15:00",
+    "price": 220,
+    "punit": "4 days",
+    "pnote": "€220 for all four days. The flyer does not offer single days.",
+    "lunch": "Not stated",
+    "transport": "Not stated",
+    "signup": "Register by email or phone.",
+    "link": "mailto:naturakidscamp@gmail.com",
+    "yr": "2027",
+    "book": "Week",
+    "dayrate": null,
+    "lang": "Not stated",
+    "weeks": [],
+    "days": [
+      "2026-12-14",
+      "2026-12-15",
+      "2026-12-16",
+      "2026-12-17"
+    ],
+    "signupUrl": "mailto:naturakidscamp@gmail.com?subject=Winter%20Camp%2014-17%20December",
+    "signupVia": "Email or phone",
+    "signupContact": "naturakidscamp@gmail.com · Carole (Ms Whyte) 912 266 455",
+    "bring": "",
+    "breaks": [
+      "Christmas"
+    ],
+    "desc": "A four-day nature camp at Quinta Fonte de Linho. Activities include mindfulness, learning about nature and animals, nature exploration, scavenger hunts and games, sustainable art and nature crafts."
   }
 ]
