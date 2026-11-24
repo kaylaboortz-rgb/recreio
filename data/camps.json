@@ -2830,5 +2830,38 @@
       "Christmas"
     ],
     "desc": "A four-day nature camp at Quinta Fonte de Linho. Activities include mindfulness, learning about nature and animals, nature exploration, scavenger hunts and games, sustainable art and nature crafts."
+  },
+  {
+    "n": "Bee Happy Play & Smile holiday days",
+    "op": "Bee Happy",
+    "area": "Cascais",
+    "loc": "Birre",
+    "amin": 4,
+    "amax": 10,
+    "cat": "Multi-activity",
+    "fmt": "Day",
+    "dates": "Public holidays: Tue 1 Dec and Tue 8 Dec 2026",
+    "hours": "10:00 to 15:00",
+    "price": null,
+    "pnote": "Price not on the flyer. Ask when booking.",
+    "lunch": "Included",
+    "transport": "Not stated",
+    "signup": "Contact by email, phone or Instagram to book. Maximum 16 children.",
+    "link": "mailto:welcome@beehappycare.eu",
+    "yr": "2027",
+    "book": "Not stated",
+    "dayrate": null,
+    "lang": "Portuguese",
+    "weeks": [],
+    "days": [
+      "2026-12-01",
+      "2026-12-08"
+    ],
+    "signupUrl": "mailto:welcome@beehappycare.eu?subject=Play%20%26%20Smile%201%20and%208%20December",
+    "signupVia": "Email or phone",
+    "signupContact": "welcome@beehappycare.eu · +351 919 349 504 · Instagram @beehappycare",
+    "bring": "",
+    "breaks": [],
+    "desc": "Two holiday days in Birre for up to 16 children, with arts, cooking, building, science and sports. All activities are in Portuguese as immersion, with some English support if needed. Snack and lunch are included."
   }
 ]
