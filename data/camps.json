@@ -2863,5 +2863,55 @@
     "bring": "",
     "breaks": [],
     "desc": "Two holiday days in Birre for up to 16 children, with arts, cooking, building, science and sports. All activities are in Portuguese as immersion, with some English support if needed. Snack and lunch are included."
+  },
+  {
+    "n": "Ohana Eco Park, winter break",
+    "op": "Ohana Eco Park",
+    "area": "Cascais",
+    "loc": "Estrada da Atrozela, 2645-028 Alcabideche",
+    "amin": 6,
+    "amax": 15,
+    "cat": "Outdoor & nature",
+    "fmt": "Day",
+    "season": "Christmas",
+    "dates": "Winter break 2026: 16 to 18, 21 to 23 and 28 to 30 Dec (three 3-day blocks)",
+    "hours": "Not stated",
+    "price": 140,
+    "punit": "3 days",
+    "pnote": "€140 for 3 days, €220 for 6 days, €290 for all 9 days. Prices include VAT, meals and Ohana insurance.",
+    "lunch": "Included",
+    "transport": "Not stated",
+    "signup": "Book through the registration form linked in their Instagram post, or by email or phone. Limited places.",
+    "link": "https://www.instagram.com/ohanaecopark/",
+    "yr": "2027",
+    "book": "Week",
+    "dayrate": null,
+    "lang": "Not stated",
+    "weeks": [],
+    "days": [
+      "2026-12-16",
+      "2026-12-17",
+      "2026-12-18",
+      "2026-12-21",
+      "2026-12-22",
+      "2026-12-23",
+      "2026-12-28",
+      "2026-12-29",
+      "2026-12-30"
+    ],
+    "signupUrl": "mailto:geral@ohanaecopark.com?subject=Christmas%20Camps%202026",
+    "signupVia": "Email, phone or form",
+    "signupContact": "geral@ohanaecopark.com · 937 156 206 · Instagram and Facebook @ohanaecopark",
+    "bring": "",
+    "breaks": [
+      "Christmas",
+      "Summer"
+    ],
+    "desc": "Three weeks of workshops and outdoor activities at Ohana Eco Park in Alcabideche, mixing creativity, adventure and games. Children can come for one, two or all three 3-day blocks. Meals are included.",
+    "tiers": [
+      140,
+      220,
+      290
+    ]
   }
 ]

@@ -94,7 +94,8 @@ function estimate(r){
   const weeks=new Set(r._m.map(d=>{const x=parse(d);x.setUTCDate(x.getUTCDate()-(x.getUTCDay()+6)%7);return iso(x)})).size;
   if(book!=="week"&&r.dayrate!=null&&r.price!=null&&r.book==="Week or day"&&r.price*weeks<r.dayrate*n) return `<div class="est">≈ €${r.price*weeks} <span>for ${n} day${n>1?"s":""}</span></div>`;
   if(book!=="week"&&r.dayrate!=null&&/day/i.test(r.book)) return `<div class="est">≈ €${r.dayrate*n} <span>for ${n} day${n>1?"s":""}</span></div>`;
-  if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") return `<div class="est">≈ €${r.price*weeks} <span>for ${r.punit?(weeks>1?weeks+" sessions":"all "+r.punit):weeks+" week"+(weeks>1?"s":"")}</span></div>`;
+  if(r.price!=null&&/Week/.test(r.book)&&r.book!=="2-week sessions") if(r.tiers){const k=Math.min(weeks,r.tiers.length);return `<div class="est">≈ €${r.tiers[k-1]} <span>for ${k*3} days</span></div>`}
+  return `<div class="est">≈ €${r.price*weeks} <span>for ${r.punit?(weeks>1?weeks+" sessions":"all "+r.punit):weeks+" week"+(weeks>1?"s":"")}</span></div>`;
   return "";
 }
 function priceCell(r,mode){
@@ -139,7 +140,8 @@ function detailsPanel(r){
   if(r.bring) facts.push(["What to bring",esc(r.bring)]);
   facts.push(["Interest",`${catEmoji(r.cat)} ${esc(r.cat)}`]);
   if(r.pnote) facts.push(["Price details",esc(winter(r.pnote))]);
-  if(r.punit&&r.book==="Week") facts.push(["Booking style",`Book all ${esc(r.punit)}`]);
+  if(r.punit&&r.tiers) facts.push(["Booking style",`Book in ${esc(r.punit)} blocks`]);
+  else if(r.punit&&r.book==="Week") facts.push(["Booking style",`Book all ${esc(r.punit)}`]);
   else if(bookText(r.book)) facts.push(["Booking style",bookText(r.book)]);
   if(r.signup) facts.push(["How to book",esc(r.signup)]);
   if(r.signupContact) facts.push([known(r.signupVia)?esc(r.signupVia):"Contact",esc(r.signupContact)]);
