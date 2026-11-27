@@ -140,7 +140,7 @@ function detailsPanel(r){
   if(r.bring) facts.push(["What to bring",esc(r.bring)]);
   facts.push(["Interest",`${catEmoji(r.cat)} ${esc(r.cat)}`]);
   if(r.pnote) facts.push(["Price details",esc(winter(r.pnote))]);
-  if(r.punit&&r.tiers) facts.push(["Booking style",`Book in ${esc(r.punit)} blocks`]);
+  if(r.punit&&r.tiers) facts.push(["Booking style",`Book in ${esc(r.punit.replace(/ days$/,"-day"))} blocks`]);
   else if(r.punit&&r.book==="Week") facts.push(["Booking style",`Book all ${esc(r.punit)}`]);
   else if(bookText(r.book)) facts.push(["Booking style",bookText(r.book)]);
   if(r.signup) facts.push(["How to book",esc(r.signup)]);
